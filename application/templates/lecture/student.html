@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Live Transcript</title>
+  <link rel="stylesheet" href="static/styles_2.css">
+</head>
+<body>
+
+  <header class="top-bar" role="banner">
+    <!--<span class="top-title">Transcription</span>-->
+    <span>
+      <!-- THIS IS WHERE THE TWO BUTTONS ARE!!!!!!!!! -->
+      <button class="q-icon" type="button" id = start_transcription>
+          <p>start</p>>
+        </button>
+      </span>
+      <span>
+        <button class="q-icon" type="button" id = "stop_transcription">
+            <p>stop</p>>
+          </button>
+      </span>
+          
+    <!--<span class="top-title">Questions</span>-->
+  </header>
+
+  <main class="layout">
+
+    <!-- Left: transcript -->
+    <section class="transcript" id="transcript" tabindex="0" aria-label="Transcript">
+      <p>Waiting for transcription...</p>
+    </section>
+
+    <!-- Right: questions -->
+    <aside class="questions" id="questions" aria-label="Questions">
+      <div class="questions-inner">
+
+        <ul class="question-list" id="question-list">
+          <li class="question posted">
+            <p class="bubble">Sed feugiat et quam quis cursus. Aenean sed dapibus lorem.</p>
+            <span class="q-icon">
+              <img src="Hand_Raised_Inverted.jpg" alt="Question you posted">
+            </span>
+          </li>
+
+          <li class="question posted">
+            <p class="bubble">This is another question that you have asked already, it has an inverted icon to show that it has been posted. I am now filling the space to be able to show off the scroll bar.</p>
+            <span class="q-icon">
+              <img src="Hand_Raised_Inverted.jpg" alt="Question you posted">
+            </span>
+          </li>
+
+        </ul>
+
+        <form class="ask-form" id="ask-form" autocomplete="off">
+          <label for="question-input" class="visually-hidden">Ask a question</label>
+          <textarea id="question-input" name="question" rows="1" placeholder="Ask a question?"></textarea>
+          <button class="q-icon" type="submit">
+            <img src="Hand_Raised.jpg" alt="Submit question">
+          </button>
+        </form>
+
+      </div>
+    </aside>
+
+  </main>
+
+  <script>
+    (() => {
+  'use strict';
+
+  const form = document.getElementById('ask-form');
+  const input = document.getElementById('question-input');
+  const list = document.getElementById('question-list');
+  const pane = document.getElementById('questions');
+
+  const startTranscription = document.getElementById('start_transcription');
+  const stopTranscription = document.getElementById('stop_transcription');
+  const transcript = document.getElementById("transcript");
+
+  const POSTED_ICON = 'lecture/Hand_Raised_Inverted.jpg';
+
+  async function beginListening(){
+    list.appendChild(createPostedQuestion("You pressed start listening"));
+    console.error('start transcription');
+
+    try {
+        const response = await fetch(
+            "/start-captions",
+            { method: "POST" }
+        );
+
+        const result = await response.json();
+
+        if (!response.ok) throw new Error(result.error || "Transcription failed.");
+    } catch (error) {
+        
+    }
+  }
+
+  async function stopListening(){
+    list.appendChild(createPostedQuestion("Confirming you pressed stop listening"));
+    console.error('stop transcription');
+   
+    try {
+        const response = await fetch(
+            "/stop-captions",
+            { method: "POST" }
+        );
+
+        const result = await response.json();
+
+        if (!response.ok) throw new Error(result.error || "Transcription failed.");
+    } catch (error) {
+        
+    }
+  }
+
+  /**
+   * Hook for the back-end team: send the question to the server here.
+   * Return a promise; if it rejects, the question is not added to the list.
+   * For now it resolves immediately so the front end can be tested on its own.
+   */
+  async function sendQuestionToServer(text) {
+    // e.g. await fetch('/api/questions', { method: 'POST', body: JSON.stringify({ text }) });
+    return { text };
+  }
+
+  /** Build a posted-question list item (text is inserted as text, never as HTML). */
+  function createPostedQuestion(text) {
+    const li = document.createElement('li');
+    li.className = 'question posted';
+
+    const bubble = document.createElement('p');
+    bubble.className = 'bubble';
+    bubble.textContent = text;
+
+    const icon = document.createElement('span');
+    icon.className = 'q-icon';
+
+    const img = document.createElement('img');
+    img.src = POSTED_ICON;
+    img.alt = 'Question you posted';
+
+    icon.appendChild(img);
+    li.append(bubble, icon);
+    return li;
+  }
+
+  function scrollQuestionsToBottom() {
+    pane.scrollTop = pane.scrollHeight;
+  }
+
+  /* Auto-grow fallback for browsers without CSS field-sizing */
+  const supportsFieldSizing = window.CSS && CSS.supports && CSS.supports('field-sizing', 'content');
+
+  function resizeInput() {
+    if (supportsFieldSizing) return;
+    input.style.height = 'auto';
+    input.style.height = input.scrollHeight + 4 + 'px'; // +4 for the 2px borders
+  }
+
+  async function submitQuestion() {
+    const text = input.value.trim();
+    if (!text) return; // ignore empty questions
+
+    input.disabled = true;
+    try {
+      await sendQuestionToServer(text);
+      list.appendChild(createPostedQuestion(text));
+      input.value = '';
+      resizeInput();
+    } catch (err) {
+      console.error('Could not post question:', err);
+    } finally {
+      input.disabled = false;
+      input.focus();
+      scrollQuestionsToBottom();
+    }
+  }
+
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    submitQuestion();
+  });
+
+  // Enter submits; Shift+Enter inserts a new line.
+  input.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
+      event.preventDefault();
+      submitQuestion();
+    }
+  });
+
+  input.addEventListener('input', resizeInput);
+
+  startTranscription.addEventListener('click', (event) =>{
+    event.preventDefault();
+    beginListening();
+  })
+
+  stopTranscription.addEventListener('click', (event) =>{
+    event.preventDefault();
+    stopListening();
+  })
+
+  let previousTranscript = "";
+  async function loadTranscript() {
+      try {
+          const response = await fetch("/transcript");
+          const result = await response.json();
+
+          if (!response.ok) throw new Error("Could not load transcript.");
+
+          const newText = result.lines.join("\n");
+
+          if (newText !== previousTranscript) {
+              transcript.replaceChildren();
+
+              for (const line of result.lines) {
+                  const paragraph = document.createElement("p");
+                  paragraph.textContent = line;
+                  transcript.appendChild(paragraph);
+              }
+
+              transcript.scrollTop = transcript.scrollHeight;
+              previousTranscript = newText;
+          }
+
+      } catch (error) {
+          
+      }
+  }
+
+  // Start transcription connection
+  loadTranscript();
+  setInterval(loadTranscript, 1000);
+  
+  // Start scrolled to the newest question.
+  scrollQuestionsToBottom();
+})();
+
+  </script>
+</body>
+</html>

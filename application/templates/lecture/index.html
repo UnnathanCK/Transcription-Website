@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+<!doctype html>
+
+{% block header %}
+    <h1>{% block title %}Classroom{% endblock %}</h1>
+{% endblock %}
+
+<section class="content">
+    <main>
+        <section id="transcript">
+            <form>
+                <h1>Transcript</h1>
+                <label>Transcript</label>
+                <button>Start</button>
+            </form>
+        </section>
+
+        <section id="questions">
+            <form>
+                <h1>Questions</h1>
+                <label>Questions</label>
+                <button>Ask</button>
+            </form>
+        </section>
+    </main>
+</section>
