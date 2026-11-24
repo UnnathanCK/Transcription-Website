@@ -49,7 +49,7 @@ transcript_lines = []
 transcript_lock = threading.Lock()
 
 def save_transcription(text):
-    print("TRANSCRIPTION RECEIVED:", text)
+    #print("TRANSCRIPTION RECEIVED:", text)
     
     with transcript_lock:
         transcript_lines.append(text)
