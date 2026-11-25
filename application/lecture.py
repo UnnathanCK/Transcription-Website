@@ -83,3 +83,15 @@ def get_transcript():
     with transcript_lock:
         return jsonify({"lines": transcript_lines.copy()})
 
+
+@bp.route('/questions', methods=['GET'])
+def get_questions():
+    db = q_db.get_db()
+
+    questions = db.execute(
+        'SELECT body FROM question ORDER BY rowid ASC'
+    ).fetchall()
+
+    return jsonify({
+        'questions': [question['body'] for question in questions]
+    })

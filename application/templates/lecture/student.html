@@ -6,7 +6,7 @@
   <title>Live Transcript</title>
   <link rel="stylesheet" href="static/styles_2.css">
 </head>
-<body>
+<body data-posted-icon="{{ url_for('static', filename='Hand_Raised_Inverted.jpg') }}">
 
   <header class="top-bar" role="banner">
     <!--<span class="top-title">Transcription</span>-->
@@ -40,14 +40,14 @@
           <li class="question posted">
             <p class="bubble">Sed feugiat et quam quis cursus. Aenean sed dapibus lorem.</p>
             <span class="q-icon">
-              <img src="Hand_Raised_Inverted.jpg" alt="Question you posted">
+              <img src="{{ url_for('static', filename='Hand_Raised_Inverted.jpg') }}" alt="Question you posted">
             </span>
           </li>
 
           <li class="question posted">
             <p class="bubble">This is another question that you have asked already, it has an inverted icon to show that it has been posted. I am now filling the space to be able to show off the scroll bar.</p>
             <span class="q-icon">
-              <img src="Hand_Raised_Inverted.jpg" alt="Question you posted">
+              <img src="{{ url_for('static', filename='Hand_Raised_Inverted.jpg') }}" alt="Question you posted">
             </span>
           </li>
 
@@ -57,7 +57,7 @@
           <label for="question-input" class="visually-hidden">Ask a question</label>
           <textarea id="question-input" name="question" rows="1" placeholder="Ask a question?"></textarea>
           <button class="q-icon" type="submit">
-            <img src="Hand_Raised.jpg" alt="Submit question">
+            <img src="{{ url_for('static', filename='Hand_Raised.jpg') }}" alt="Submit question">
           </button>
         </form>
 
@@ -79,7 +79,7 @@
   const stopTranscription = document.getElementById('stop_transcription');
   const transcript = document.getElementById("transcript");
 
-  const POSTED_ICON = 'lecture/Hand_Raised_Inverted.jpg';
+  const POSTED_ICON = document.body.dataset.postedIcon;
 
   async function beginListening(){
     list.appendChild(createPostedQuestion("You pressed start listening"));
@@ -181,7 +181,7 @@
     input.disabled = true;
     try {
       await sendQuestionToServer(text);
-      list.appendChild(createPostedQuestion(text));
+      await loadQuestions();
       input.value = '';
       resizeInput();
     } catch (err) {
@@ -245,6 +245,33 @@
           
       }
   }
+
+  async function loadQuestions() {
+      try {
+          const response = await fetch('/questions');
+          const result = await response.json();
+
+          if (!response.ok) {
+              throw new Error('Could not load questions.');
+          }
+
+          // Clear the current list
+          list.replaceChildren();
+
+          // Add every saved question to the webpage
+          for (const question of result.questions) {
+              list.appendChild(createPostedQuestion(question));
+          }
+
+          scrollQuestionsToBottom();
+
+      } catch (error) {
+          console.error('Could not load questions:', error);
+      }
+  }
+
+  // Load previous questions
+  loadQuestions();
 
   // Start transcription connection
   loadTranscript();
