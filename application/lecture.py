@@ -36,7 +36,7 @@ def student():
 
         if error is None:
             db.execute(
-                'INSERT INTO questions (question_text) VALUES (?)',
+                'INSERT INTO question (body) VALUES (?)',
                 (question_text,)
             )
             db.commit()

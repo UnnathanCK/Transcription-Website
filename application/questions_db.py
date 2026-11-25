@@ -7,13 +7,13 @@ from werkzeug.security import generate_password_hash
 
 def get_db():
     if 'questions_db' not in g:
-        g.db = sqlite3.connect(
+        g.questions_db = sqlite3.connect(
             current_app.config['DATABASE'],
             detect_types=sqlite3.PARSE_DECLTYPES
         )
-        g.db.row_factory = sqlite3.Row
+        g.questions_db.row_factory = sqlite3.Row
 
-        return g.db
+    return g.questions_db
 
 def close_db(e=None):
     db = g.pop('questions_db', None)
@@ -26,7 +26,7 @@ def init_db():
     with current_app.open_resource('questions_schema.sql') as f:
         db.executescript(f.read().decode('utf8'))
 
-@click.command('init-db')
+@click.command('init-questions-db')
 def init_db_command():
     """Clear the existing data and create new tables."""
     init_db()
@@ -34,14 +34,18 @@ def init_db_command():
     click.echo('Initialized the database.')
 
 def create_default_users():
-    users = [('Instructor', generate_password_hash('Unsecured9')), 
+    users = [('Instructor', generate_password_hash('Unsecured9')),
              ('Student', generate_password_hash('password')),
              ('Dev', generate_password_hash('Shrimp5-Ageless9'))]
+
+    db = get_db()
+
     for user in users:
-        g.db.execute("INSERT INTO user (username, password) VALUES (?, ?)",
-               user,
-               )
-        g.db.commit()
+        db.execute(
+            "INSERT INTO user (username, password) VALUES (?, ?)",
+            user
+        )
+        db.commit()
 
 sqlite3.register_converter(
     "timestamp", lambda v: datetime.fromisoformat(v.decode())
